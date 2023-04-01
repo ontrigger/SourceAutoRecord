@@ -1061,6 +1061,8 @@ bool Server::Init() {
 	sv_portal_placement_debug = Variable("sv_portal_placement_debug");
 	sv_allow_mobile_portals = Variable("sv_allow_mobile_portals");
 
+	RngManip::init();
+
 	return this->hasLoaded = this->g_GameMovement && this->g_ServerGameDLL;
 }
 CON_COMMAND(sar_coop_reset_progress, "sar_coop_reset_progress - resets all coop progress\n") {
