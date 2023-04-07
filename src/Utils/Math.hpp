@@ -28,18 +28,6 @@ namespace Math {
 }  // namespace Math
 
 inline void Math::SinCos(float radians, float *sine, float *cosine) {
-#ifdef _WIN32
-	_asm {
-        fld DWORD PTR[radians]
-        fsincos
-
-        mov edx, DWORD PTR[cosine]
-        mov eax, DWORD PTR[sine]
-
-        fstp DWORD PTR[edx]
-        fstp DWORD PTR[eax]
-	}
-#else
 	double __cosr, __sinr;
 	__asm("fsincos"
 	      : "=t"(__cosr), "=u"(__sinr)
@@ -47,7 +35,6 @@ inline void Math::SinCos(float radians, float *sine, float *cosine) {
 
 	*sine = __sinr;
 	*cosine = __cosr;
-#endif
 }
 inline void Math::VectorAdd(const Vector &a, const Vector &b, Vector &c) {
 	c.x = a.x + b.x;

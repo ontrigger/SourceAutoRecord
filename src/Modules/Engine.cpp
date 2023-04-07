@@ -32,8 +32,8 @@
 
 #ifdef _WIN32
 // clang-format off
-#	include <Windows.h>
-#	include <Memoryapi.h>
+#	include <windows.h>
+#	include <memoryapi.h>
 #	define strcasecmp _stricmp
 // clang-format on
 #else
@@ -86,13 +86,6 @@ REDECL(Engine::stop_transition_videos_fadeout_callback);
 REDECL(Engine::load_callback);
 REDECL(Engine::give_callback);
 REDECL(Engine::exec_callback);
-#ifdef _WIN32
-REDECL(Engine::ParseSmoothingInfo_Skip);
-REDECL(Engine::ParseSmoothingInfo_Default);
-REDECL(Engine::ParseSmoothingInfo_Continue);
-REDECL(Engine::ParseSmoothingInfo_Mid);
-REDECL(Engine::ParseSmoothingInfo_Mid_Trampoline);
-#endif
 
 void Engine::ExecuteCommand(const char *cmd, bool immediately) {
 	if (immediately) {
@@ -393,7 +386,7 @@ DETOUR(Engine::Frame) {
 
 	engine->lastTick = session->GetTick();
 
-	Renderer::Frame();
+	//Renderer::Frame();
 	engine->demoplayer->HandlePlaybackFix();
 	Event::Trigger<Event::FRAME>({});
 	if (!engine->IsSkipping() && session->isRunning) Event::Trigger<Event::RENDER>({});
@@ -431,39 +424,6 @@ DETOUR_T(const char *, Engine::ReadConsoleCommand) {
 	}
 	return cmd;
 }
-
-#ifdef _WIN32
-// CDemoFile::ReadCustomData
-void __fastcall ReadCustomData_Wrapper(int demoFile, int edx, int unk1, int unk2) {
-	Engine::ReadCustomData((void *)demoFile, nullptr, nullptr);
-}
-// CDemoSmootherPanel::ParseSmoothingInfo
-DETOUR_MID_MH(Engine::ParseSmoothingInfo_Mid) {
-	__asm {
-		// Check if we have dem_customdata
-        cmp eax, 8
-        jne _orig
-
-			// Parse stuff that does not get parsed (thanks valve)
-        push edi
-        push edi
-        mov ecx, esi
-        call ReadCustomData_Wrapper
-
-        jmp Engine::ParseSmoothingInfo_Skip
-
-_orig:  // Original overwritten instructions
-        add eax, -3
-        cmp eax, 6
-        ja _def
-
-        jmp Engine::ParseSmoothingInfo_Continue
-
-_def:
-        jmp Engine::ParseSmoothingInfo_Default
-	}
-}
-#endif
 
 // CSteam3Client::OnGameOverlayActivated
 DETOUR_B(Engine::OnGameOverlayActivated, GameOverlayActivated_t *pGameOverlayActivated) {
@@ -917,7 +877,7 @@ bool Engine::Init() {
 		uintptr_t Init = s_EngineAPI->Original(Offsets::Init);
 		uintptr_t VideoMode_Create = Memory::Read(Init + Offsets::VideoMode_Create);
 		void **videomode = *(void ***)(VideoMode_Create + Offsets::videomode);
-		Renderer::Init(videomode);
+		//Renderer::Init(videomode);
 		Stitcher::Init(videomode);
 
 		Interface::Delete(s_EngineAPI);
@@ -932,25 +892,6 @@ bool Engine::Init() {
 		auto FireEventIntern = Memory::Read(FireEventClientSide + Offsets::FireEventIntern);
 		Memory::Read<_ConPrintEvent>(FireEventIntern + Offsets::ConPrintEvent, &this->ConPrintEvent);
 	}
-
-#ifdef _WIN32
-	// Note: we don't get readCustomDataAddr anymore as we find this
-	// below anyway
-	auto parseSmoothingInfoAddr = Memory::Scan(this->Name(), "55 8B EC 0F 57 C0 81 EC ? ? ? ? B9 ? ? ? ? 8D 85 ? ? ? ? EB", 178);
-
-	console->DevMsg("CDemoSmootherPanel::ParseSmoothingInfo = %p\n", parseSmoothingInfoAddr);
-
-	if (parseSmoothingInfoAddr) {
-		MH_HOOK_MID(Engine::ParseSmoothingInfo_Mid, parseSmoothingInfoAddr);  // Hook switch-case
-		Engine::ParseSmoothingInfo_Continue = parseSmoothingInfoAddr + 8;     // Back to original function
-		Engine::ParseSmoothingInfo_Default = parseSmoothingInfoAddr + 133;    // Default case
-		Engine::ParseSmoothingInfo_Skip = parseSmoothingInfoAddr - 29;        // Continue loop
-
-		this->demoSmootherPatch = new Memory::Patch();
-		unsigned char nop3[] = {0x90, 0x90, 0x90};
-		this->demoSmootherPatch->Execute(parseSmoothingInfoAddr + 5, nop3);  // Nop rest
-	}
-#endif
 
 #ifdef _WIN32
 	Host_AccumulateTime = (void (*)(float))Memory::Scan(this->Name(), "55 8B EC 51 F3 0F 10 05 ? ? ? ? F3 0F 58 45 08 8B 0D ? ? ? ? F3 0F 11 05 ? ? ? ? 8B 01 8B 50 20 53 B3 01 FF D2", 0);
@@ -1070,7 +1011,7 @@ void Engine::Shutdown() {
 		*OnGameOverlayActivated = Engine::OnGameOverlayActivatedBase;
 	}
 
-	Renderer::Cleanup();
+	//Renderer::Cleanup();
 
 	Interface::Delete(this->engineClient);
 	Interface::Delete(this->s_ServerPlugin);
@@ -1091,14 +1032,6 @@ void Engine::Shutdown() {
 	*(uint32_t *)this->readConsoleCommandInjectAddr = 0x0008155A;
 #endif
 
-#ifdef _WIN32
-	MH_UNHOOK(Engine::ParseSmoothingInfo_Mid);
-
-	if (this->demoSmootherPatch) {
-		this->demoSmootherPatch->Restore();
-	}
-	SAFE_DELETE(this->demoSmootherPatch)
-#endif
 	Command::Unhook("plugin_load", Engine::plugin_load_callback);
 	Command::Unhook("plugin_unload", Engine::plugin_unload_callback);
 	Command::Unhook("exit", Engine::exit_callback);

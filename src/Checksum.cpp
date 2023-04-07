@@ -152,7 +152,7 @@ static bool fileChecksum(FILE *fp, size_t ignoreEnd, uint32_t *crcOut) {
 
 	char *buf = (char *)malloc(size);
 
-	fread(buf, 1, size, fp);
+	(void)fread(buf, 1, size, fp);
 	if (ferror(fp)) {
 		free(buf);
 		return false;
@@ -175,7 +175,7 @@ static bool signDemo(FILE *fp, unsigned char *signature) {
 	if (fseek(fp, 0, SEEK_SET)) return false;
 
 	char *buf = (char *)malloc(size + 4); // extra bytes for SAR checksum
-	fread(buf, 1, size, fp);
+	(void)fread(buf, 1, size, fp);
 	if (ferror(fp)) {
 		free(buf);
 		return false;

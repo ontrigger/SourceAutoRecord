@@ -240,7 +240,7 @@ DETOUR(EngineDemoPlayer::StartPlayback, const char *filename, bool bAsTimeDemo) 
 			console->Print("Tickrate: %.3f\n", demo.Tickrate());
 			engine->demoplayer->levelName = demo.mapName;
 			g_demoStart = demo.firstPositivePacketTick;
-			Renderer::segmentEndTick = demo.segmentTicks;
+			//Renderer::segmentEndTick = demo.segmentTicks;
 			if (!sar_demo_remove_broken.GetBool()) Event::Trigger<Event::DEMO_START>({});
 			g_demoFixing = sar_demo_remove_broken.GetBool();
 		} else {
@@ -250,7 +250,7 @@ DETOUR(EngineDemoPlayer::StartPlayback, const char *filename, bool bAsTimeDemo) 
 
 	camera->RequestTimeOffsetRefresh();
 
-	Renderer::isDemoLoading = true;
+	//Renderer::isDemoLoading = true;
 
 	engine->demoplayer->replayName = filename;
 	size_t namelen = strlen(filename);

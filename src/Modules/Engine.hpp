@@ -199,16 +199,6 @@ public:
 	DECL_DETOUR(ReadCustomData, int *callbackIndex, char **data);
 	DECL_DETOUR_T(const char *, ReadConsoleCommand);
 
-#ifdef _WIN32
-	// CDemoSmootherPanel::ParseSmoothingInfo
-	static uintptr_t ParseSmoothingInfo_Skip;
-	static uintptr_t ParseSmoothingInfo_Default;
-	static uintptr_t ParseSmoothingInfo_Continue;
-	DECL_DETOUR_MID_MH(ParseSmoothingInfo_Mid);
-
-	Memory::Patch *demoSmootherPatch = nullptr;
-#endif
-
 	bool Init() override;
 	void Shutdown() override;
 	const char *Name() override { return MODULE("engine"); }

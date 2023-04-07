@@ -10,11 +10,11 @@ class GhostRenderer {
 private:
 	GhostEntity *ghost;
 
-	float lastUpdateCall;
+	float lastUpdateCall = 0.0f;
 	std::vector<Vector> animatedVerts;
-	float walkingCycle;
-	float squishForce;
-	bool oldGroundedState;
+	float walkingCycle = 0.0f;
+	float squishForce = 0.0f;
+	bool oldGroundedState = false;
 
 private:
 	void UpdateAnimatedVerts();

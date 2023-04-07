@@ -33,7 +33,7 @@ private:
 	TasControllerButton buttons[TAS_CONTROLLER_INPUT_COUNT] = {};
 	std::vector<std::string> commandQueue;
 
-	bool enabled;
+	bool enabled = false;
 
 public:
 	TasController();

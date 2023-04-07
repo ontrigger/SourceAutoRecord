@@ -35,20 +35,6 @@ namespace Memory {
 	uintptr_t Scan(const char *moduleName, const char *pattern, int offset = 0);
 	std::vector<uintptr_t> MultiScan(const char *moduleName, const char *pattern, int offset = 0);
 
-#ifdef _WIN32
-	class Patch {
-	private:
-		uintptr_t location;
-		unsigned char *original;
-		size_t size;
-
-	public:
-		~Patch();
-		bool Execute(uintptr_t location, unsigned char *bytes);
-		bool Restore();
-	};
-#endif
-
 	struct Pattern {
 		const char *signature;
 		std::vector<int> offsets;

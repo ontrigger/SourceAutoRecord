@@ -1,4 +1,4 @@
-// THIS FILE IS INTENTIONALLY NOT INCLUDED IN THE WINDOWS BUILD
+#ifndef _WIN32
 // dircache by JJL772 (https://github.com/JJL772/dircache)
 
 #include <atomic>
@@ -333,3 +333,5 @@ ON_INIT {
 	}
 	_g_pm_hook.SetFunc(orig);
 }
+
+#endif

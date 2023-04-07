@@ -8,8 +8,8 @@
 
 #ifdef _WIN32
 // clang-format off
-#	include <Windows.h>
-#	include <ImageHlp.h>
+#	include <windows.h>
+#	include <imagehlp.h>
 // clang-format on
 #else
 #	include <dlfcn.h>
@@ -76,6 +76,7 @@ std::optional<Color> Utils::GetColor(const char *str, bool to_linear) {
 		Color { (uint8_t)r, (uint8_t)g, (uint8_t)b, (uint8_t)a }
 
 	while (isspace(*str)) ++str;
+	if (!*str) return {};
 	size_t len = strlen(str);
 	for (size_t i = len - 1; i; --i) {
 		if (!isspace(str[i])) break;

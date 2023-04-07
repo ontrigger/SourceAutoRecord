@@ -1,3 +1,4 @@
+#include <curl/curl.h> // must be first for include order reasons
 #include "AutoSubmit.hpp"
 #include "Command.hpp"
 #include "Event.hpp"
@@ -13,7 +14,6 @@
 #include <optional>
 #include <string>
 #include <filesystem>
-#include <curl/curl.h>
 
 #define API_BASE "https://board.portal2.sr/api-v2"
 #define AUTOSUBMIT_TOAST_TAG "autosubmit"

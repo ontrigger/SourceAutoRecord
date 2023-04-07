@@ -273,3 +273,6 @@ config.mk
 
 src/Version.hpp
 copy.bat
+
+zig-cache/
+zig-out/

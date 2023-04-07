@@ -10,8 +10,8 @@
 
 #ifdef _WIN32
 // clang-format off
-#	include <Windows.h>
-#	include <DbgHelp.h>
+#	include <windows.h>
+#	include <dbghelp.h>
 #	include <direct.h>
 // clang-format on
 #else
@@ -189,7 +189,7 @@ void CrashHandler::Cleanup() {
 	HANDLE process = GetCurrentProcess();
 	SymGetModuleInfo(process, (DWORD)&Utils::GetSARPath, &info);
 	SymUnloadModule(process, info.BaseOfImage);
-	RemoveVectoredExceptionHandler(&handler);
+	RemoveVectoredExceptionHandler((void *)&handler);
 	SymCleanup(GetCurrentProcess());
 }
 

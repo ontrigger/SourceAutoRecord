@@ -119,7 +119,7 @@ std::string Memory::GetProcessName() {
 	char link[32];
 	char temp[MAX_PATH] = {0};
 	std::sprintf(link, "/proc/%d/exe", getpid());
-	readlink(link, temp, sizeof(temp));
+	(void)readlink(link, temp, sizeof(temp));
 #endif
 
 	auto proc = std::string(temp);
@@ -240,42 +240,3 @@ std::vector<std::vector<uintptr_t>> Memory::MultiScan(const char *moduleName, co
 	}
 	return results;
 }
-
-#ifdef _WIN32
-Memory::Patch::~Patch() {
-	if (this->original) {
-		this->Restore();
-		delete this->original;
-		this->original = nullptr;
-	}
-}
-bool Memory::Patch::Execute(uintptr_t location, unsigned char *bytes) {
-	this->location = location;
-	this->size = sizeof(bytes) / sizeof(bytes[0]) - 1;
-	this->original = new unsigned char[this->size];
-
-	for (size_t i = 0; i < this->size; ++i) {
-		if (!ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<LPVOID>(this->location + i), &this->original[i], 1, 0)) {
-			return false;
-		}
-	}
-
-	for (size_t i = 0; i < this->size; ++i) {
-		if (!WriteProcessMemory(GetCurrentProcess(), reinterpret_cast<LPVOID>(this->location + i), &bytes[i], 1, 0)) {
-			return false;
-		}
-	}
-	return true;
-}
-bool Memory::Patch::Restore() {
-	if (this->location && this->original) {
-		for (size_t i = 0; i < this->size; ++i) {
-			if (!WriteProcessMemory(GetCurrentProcess(), reinterpret_cast<LPVOID>(this->location + i), &this->original[i], 1, 0)) {
-				return false;
-			}
-		}
-		return true;
-	}
-	return false;
-}
-#endif

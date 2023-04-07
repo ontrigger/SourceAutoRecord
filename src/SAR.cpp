@@ -1,10 +1,11 @@
+#include <curl/curl.h> // must be first for include order reasons
+
 #include "SAR.hpp"
 
 #include "Version.hpp"
 
 #include <cstring>
 #include <ctime>
-#include <curl/curl.h>
 
 #ifdef _WIN32
 #	include <filesystem>
