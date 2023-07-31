@@ -59,6 +59,9 @@ struct Trace {
 	// indiscriminately of player (also ones placed by pedestals etc)
 	std::vector<PortalLocations> portals;
 	std::vector<VphysLocationList> vphysLocations;
+
+	std::vector<std::string> log_scope_stack;
+	std::vector<std::string> log_lines;
 	bool draw = true;
 };
 
@@ -109,6 +112,11 @@ public:
 	void CheckTraceChanged();
 	// Get the current trace bbox tick for TAS stuff, or -1 if there isn't one
 	int GetTasTraceTick();
+
+	// Returns an identifier for the scope which should be passed to ExitLogScope
+	void EnterLogScope(const char *name);
+	void ExitLogScope();
+	void EmitLog(const char *msg);
 };
 
 extern PlayerTrace *playerTrace;
