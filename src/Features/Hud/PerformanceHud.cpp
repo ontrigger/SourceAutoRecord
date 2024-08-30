@@ -235,6 +235,7 @@ CON_COMMAND(sar_performance_hud_clear, "Clears the performance HUD data.\n") {
 	performanceHud->times_vgui.clear();
 	performanceHud->times_preTick.clear();
 	performanceHud->times_postTick.clear();
+	performanceHud->times_vgui_elements.clear();
 }
 
 PerformanceHud *performanceHud = new PerformanceHud();
