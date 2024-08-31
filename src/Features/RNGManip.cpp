@@ -22,6 +22,8 @@ static std::optional<json11::Json> g_pending_load;
 
 static std::deque<QAngle> g_queued_view_punches;
 static std::vector<QAngle> g_recorded_view_punches;
+static std::deque<int> g_queued_randomseeds;
+static std::vector<int> g_recorded_randomseeds;
 
 static json11::Json saveViewPunches() {
 	std::vector<json11::Json> punches;
@@ -89,10 +91,31 @@ static bool restorePaintSprayers(const json11::Json &data) {
 	return idx == data.array_items().size();
 }
 
+static json11::Json saveRandomSeeds() {
+	std::vector<json11::Json> seeds;
+
+	for (int seed : g_recorded_randomseeds) {
+		seeds.push_back(json11::Json(seed));
+	}
+
+	return json11::Json(seeds);
+}
+
+static bool restoreRandomSeeds(const json11::Json &data) {
+	if (!data.is_array()) return false;
+
+	for (auto &val : data.array_items()) {
+		g_queued_randomseeds.push_back(val.int_value());
+	}
+
+	return true;
+}
+
 // clear old rng data
 ON_EVENT_P(SESSION_START, 999) {
 	g_queued_view_punches.clear();
 	g_recorded_view_punches.clear();
+	g_queued_randomseeds.clear();
 }
 
 // load pending rng data
@@ -123,6 +146,10 @@ ON_EVENT(SESSION_START) {
 		console->Print("Failed to restore p2rng view punch data!\n");
 	}
 
+	if (!restoreRandomSeeds(data["random_seeds"])) {
+		console->Print("Failed to restore p2rng random seed data!\n");
+	}
+
 	console->Print("p2rng restore complete\n");
 }
 
@@ -147,6 +174,7 @@ void RngManip::saveData(const char *filename) {
 
 	auto root = g_session_state->object_items();
 	root["view_punch"] = saveViewPunches();
+	root["seeds"] = saveRandomSeeds();
 
 	auto filepath = fileSystem->FindFileSomewhere(filename).value_or(filename);
 	FILE *f = fopen(filepath.c_str(), "w");
@@ -559,9 +587,14 @@ Hook g_AirAccelerate_Hook(AirAccelerate_Hook);
 extern Hook g_RandomSeed_Hook;
 void (*RandomSeed)(int);
 void RandomSeed_Hook(int seed) {
-	// TODO: this is completely illegitimate, but useful while working on other stuff. Revisit before merge!
 	g_RandomSeed_Hook.Disable();
-	RandomSeed(1);
+	if (g_queued_randomseeds.size() > 0) {
+		seed = g_queued_randomseeds.front();
+		g_queued_randomseeds.pop_front();
+	}
+	playerTrace->EmitLog(Utils::ssprintf("RandomSeed(%d)", seed).c_str());
+	g_recorded_randomseeds.push_back(seed);
+	RandomSeed(seed);
 	g_RandomSeed_Hook.Enable();
 }
 Hook g_RandomSeed_Hook(RandomSeed_Hook);
