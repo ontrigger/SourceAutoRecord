@@ -254,7 +254,7 @@ extern Hook g_EnsureAvailableSlotsForGender_Hook;
 DECL_DETOUR_T(void, EnsureAvailableSlotsForGender, SoundFile *pSounds, int count, int gender) {
 	for (int i = 0; i < count; ++i) {
 		if (g_reset_sound_files.insert(pSounds[i].symbol).second) {
-			//console->Print("sound availability reset\n");
+			playerTrace->EmitLog(Utils::ssprintf("Sound availability reset: %d", pSounds[i].symbol).c_str());
 			pSounds[i].available = 1;
 		}
 	}
@@ -433,6 +433,8 @@ extern Hook g_PhysRelinkChildren_Hook;
 DECL_DETOUR_T(void, PhysRelinkChildren, float dt) {
 	playerTrace->EnterLogScope("CBaseEntity::PhysicsRelinkChildren");
 
+	playerTrace->EmitLog(Utils::ssprintf("dt=%.6f", dt).c_str());
+
 	g_PhysRelinkChildren_Hook.Disable();
 	PhysRelinkChildren(thisptr, dt);
 	g_PhysRelinkChildren_Hook.Enable();
@@ -540,7 +542,7 @@ DECL_DETOUR_T(void, Friction) {
 	Friction(thisptr);
 	g_Friction_Hook.Enable();
 
-	playerTrace->EmitLog(Utils::ssprintf("PRE  m_outWishVel=(%.6f,%.6f,%.6f)", mv->m_outWishVel.x, mv->m_outWishVel.y, mv->m_outWishVel.z).c_str());
+	playerTrace->EmitLog(Utils::ssprintf("POST m_outWishVel=(%.6f,%.6f,%.6f)", mv->m_outWishVel.x, mv->m_outWishVel.y, mv->m_outWishVel.z).c_str());
 
 	playerTrace->ExitLogScope();
 }
@@ -557,7 +559,7 @@ DECL_DETOUR_T(void, WalkMove) {
 	WalkMove(thisptr);
 	g_WalkMove_Hook.Enable();
 
-	playerTrace->EmitLog(Utils::ssprintf("PRE  m_outWishVel=(%.6f,%.6f,%.6f)", mv->m_outWishVel.x, mv->m_outWishVel.y, mv->m_outWishVel.z).c_str());
+	playerTrace->EmitLog(Utils::ssprintf("POST m_outWishVel=(%.6f,%.6f,%.6f)", mv->m_outWishVel.x, mv->m_outWishVel.y, mv->m_outWishVel.z).c_str());
 
 	playerTrace->ExitLogScope();
 }
@@ -578,7 +580,7 @@ DECL_DETOUR_T(void, AirAccelerate, Vector *wishdir, float wishspeed, float accel
 	AirAccelerate(thisptr, wishdir, wishspeed, accel);
 	g_AirAccelerate_Hook.Enable();
 
-	playerTrace->EmitLog(Utils::ssprintf("PRE  m_outWishVel=(%.6f,%.6f,%.6f)", mv->m_outWishVel.x, mv->m_outWishVel.y, mv->m_outWishVel.z).c_str());
+	playerTrace->EmitLog(Utils::ssprintf("POST m_outWishVel=(%.6f,%.6f,%.6f)", mv->m_outWishVel.x, mv->m_outWishVel.y, mv->m_outWishVel.z).c_str());
 
 	playerTrace->ExitLogScope();
 }
