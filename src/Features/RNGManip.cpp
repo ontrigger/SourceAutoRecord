@@ -1,21 +1,23 @@
 #include "RNGManip.hpp"
-#include "Utils/json11.hpp"
+
 #include "Event.hpp"
-#include "Offsets.hpp"
+#include "Hook.hpp"
 #include "Modules/Console.hpp"
 #include "Modules/Engine.hpp"
 #include "Modules/FileSystem.hpp"
 #include "Modules/Server.hpp"
+#include "Offsets.hpp"
 #include "PlayerTrace.hpp"
-#include "Hook.hpp"
 #include "Utils/SDK/IVP.hpp"
 #include "Utils/SDK/UserCmd.hpp"
+#include "Utils/json11.hpp"
+
 #include <cstring>
-#include <fstream>
-#include <string>
-#include <sstream>
 #include <deque>
+#include <fstream>
 #include <set>
+#include <sstream>
+#include <string>
 
 static std::optional<json11::Json> g_session_state;
 static std::optional<json11::Json> g_pending_load;
@@ -220,6 +222,17 @@ void RngManip::viewPunch(QAngle *offset) {
 	}
 
 	g_recorded_view_punches.push_back(*offset);
+	playerTrace->EmitLog(Utils::ssprintf("ViewPunch(%.6f, %.6f, %.6f)", offset->x, offset->y, offset->z).c_str());
+}
+
+void RngManip::randomSeed(int *seed) {
+	if (g_queued_randomseeds.size() > 0) {
+		*seed = g_queued_randomseeds.front();
+		g_queued_randomseeds.pop_front();
+	}
+
+	g_recorded_randomseeds.push_back(*seed);
+	playerTrace->EmitLog(Utils::ssprintf("RandomSeed(%d)", *seed).c_str());
 }
 
 CON_COMMAND(sar_rng_save, "sar_rng_save <filename> - save RNG seed data to the specified file\n") {
@@ -529,13 +542,6 @@ void RngManip::ExitProcessMovement(CMoveData *move) {
 	playerTrace->ExitLogScope();
 }
 
-ON_EVENT(SESSION_START) {
-	// Reset this between sessions so the stuck check can't depend on previous sessions
-	if (!g_gamemovement) return;
-	float *m_flStuckCheckTime = (float *)(((char *)g_gamemovement) + 36 + 33*3*16 + 8);
-	memset(m_flStuckCheckTime, 0, 34 * 2 * sizeof (float));
-}
-
 extern Hook g_Friction_Hook;
 DECL_DETOUR_T(void, Friction) {
 	playerTrace->EnterLogScope("CPortalGameMovement::Friction");
@@ -594,13 +600,8 @@ Hook g_AirAccelerate_Hook(AirAccelerate_Hook);
 extern Hook g_RandomSeed_Hook;
 void (*RandomSeed)(int);
 void RandomSeed_Hook(int seed) {
+	RngManip::randomSeed(&seed);
 	g_RandomSeed_Hook.Disable();
-	if (g_queued_randomseeds.size() > 0) {
-		seed = g_queued_randomseeds.front();
-		g_queued_randomseeds.pop_front();
-	}
-	playerTrace->EmitLog(Utils::ssprintf("RandomSeed(%d)", seed).c_str());
-	g_recorded_randomseeds.push_back(seed);
 	RandomSeed(seed);
 	g_RandomSeed_Hook.Enable();
 }
@@ -673,6 +674,13 @@ void RngManip::init() {
 
 	RandomSeed = Memory::GetSymbolAddress<decltype(RandomSeed)>(Memory::GetModuleHandleByName(tier1->Name()), "RandomSeed");
 	g_RandomSeed_Hook.SetFunc(RandomSeed);
+}
+
+ON_EVENT(SESSION_START) {
+	// Reset this between sessions so the stuck check can't depend on previous sessions
+	if (!g_gamemovement) return;
+	float *m_flStuckCheckTime = (float *)(((char *)g_gamemovement) + 36 + 33*3*16 + 8);
+	memset(m_flStuckCheckTime, 0, 34 * 2 * sizeof (float));
 }
 
 ON_EVENT(SESSION_END) {
