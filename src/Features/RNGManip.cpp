@@ -116,6 +116,7 @@ ON_EVENT_P(SESSION_START, 999) {
 	g_queued_view_punches.clear();
 	g_recorded_view_punches.clear();
 	g_queued_randomseeds.clear();
+	g_recorded_randomseeds.clear();
 }
 
 // load pending rng data
