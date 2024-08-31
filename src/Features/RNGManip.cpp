@@ -147,7 +147,7 @@ ON_EVENT(SESSION_START) {
 		console->Print("Failed to restore p2rng view punch data!\n");
 	}
 
-	if (!restoreRandomSeeds(data["random_seeds"])) {
+	if (!restoreRandomSeeds(data["seeds"])) {
 		console->Print("Failed to restore p2rng random seed data!\n");
 	}
 
