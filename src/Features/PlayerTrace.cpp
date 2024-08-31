@@ -1066,7 +1066,7 @@ CON_COMMAND(sar_trace_export, "sar_trace_export <filename> [trace name] - Export
 	console->Print("Trace successfully exported to '%s'!\n", filename.c_str());
 }
 
-CON_COMMAND(sar_trace_compare, "sar_trace_compare <trace 1> <trace 2> - compares two given recorded traces and shows where differences occured.\n") {
+CON_COMMAND(sar_trace_compare, "sar_trace_compare <trace 1> <trace 2> - compares two given recorded traces and shows where differences occurred.\n") {
 	if (args.ArgC() != 3)
 		return console->Print(sar_trace_compare.ThisPtr()->m_pszHelpString);
 
