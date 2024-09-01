@@ -360,7 +360,6 @@ TasPlayerInfo TasPlayer::GetPlayerInfo(int slot, void *player, CUserCmd *cmd, bo
 
 		m_nOldButtons = pl->template field<int>("m_nOldButtons");
 
-		pi.tick = pl->template field<int>("m_nTickBase");
 		pi.slot = server->GetSplitScreenPlayerSlot(player);
 		pi.surfaceFriction = *reinterpret_cast<float *>((uintptr_t)player + Offsets::S_m_surfaceFriction);
 		pi.ducked = pl->ducked();
@@ -400,7 +399,6 @@ TasPlayerInfo TasPlayer::GetPlayerInfo(int slot, void *player, CUserCmd *cmd, bo
 
 		m_nOldButtons = pl->template field<int>("m_nOldButtons");
 
-		pi.tick = pl->template field<int>("m_nTickBase");
 		pi.slot = server->GetSplitScreenPlayerSlot(player);
 		pi.surfaceFriction = *reinterpret_cast<float *>((uintptr_t)player + Offsets::C_m_surfaceFriction);
 		pi.ducked = pl->ducked();
@@ -423,11 +421,12 @@ TasPlayerInfo TasPlayer::GetPlayerInfo(int slot, void *player, CUserCmd *cmd, bo
 
 	// predict the result of autojump tool so other tools can react appropriately.
 	FOR_TAS_SCRIPT_VERSIONS_SINCE(8) {
-		if (autoJumpTool[slot].ShouldJump(pi)) {
+		if (autoJumpTool[slot].GetCurrentParams().enabled && autoJumpTool[slot].ShouldJump(pi)) {
 			pi.willBeGrounded = false;
 		}
 	}
 
+	pi.tick = FetchCurrentPlayerTickBase(player, clientside);
 	pi.angles = engine->GetAngles(pi.slot);
 	
 	pi.oldButtons = m_nOldButtons;
@@ -442,6 +441,16 @@ TasPlayerInfo TasPlayer::GetPlayerInfo(int slot, void *player, CUserCmd *cmd, bo
 	}
 
 	return pi;
+}
+
+int TasPlayer::FetchCurrentPlayerTickBase(void *player, bool clientside) {
+	if (!clientside) {
+		ServerEnt *pl = (ServerEnt *)player;
+		return pl->template field<int>("m_nTickBase");
+	} else {
+		ClientEnt *pl = (ClientEnt *)player;
+		return pl->template field<int>("m_nTickBase");
+	}
 }
 
 void TasPlayer::SaveUsercmdDebugs(int slot) {
@@ -584,10 +593,24 @@ void TasPlayer::PostProcess(int slot, void *player, CUserCmd *cmd) {
 	if (!ready) return;
 	if (slot == playbackInfo.coopControlSlot) return;
 
-	auto playerInfo = GetPlayerInfo(slot, player, cmd);
 	// player tickbase seems to be an accurate way of getting current time in ProcessMovement
 	// every other way of getting time is incorrect due to alternateticks
-	int tasTick = playerInfo.tick - startTick;
+	int tasTick = FetchCurrentPlayerTickBase(player) - startTick;
+
+	TasFramebulk fb = GetRawFramebulkAt(slot, tasTick, currentToolsFramebulkIndex[slot]);
+
+	// update all tools that needs to be updated
+	auto fbTick = fb.tick;
+	fb.tick = tasTick;
+	if (fbTick == tasTick) {
+		for (TasToolCommand cmd : fb.toolCmds) {
+			auto tool = TasTool::GetInstanceByName(slot, cmd.tool->GetName());
+			if (tool == nullptr) continue;
+			tool->SetParams(cmd.params);
+		}
+	}
+
+	auto playerInfo = GetPlayerInfo(slot, player, cmd);
 
 	float orig_forward = cmd->forwardmove;
 	float orig_side = cmd->sidemove;
@@ -603,19 +626,6 @@ void TasPlayer::PostProcess(int slot, void *player, CUserCmd *cmd) {
 	// do not allow inputs after TAS has ended
 	if (tasTick > lastTick) {
 		return;
-	}
-
-	TasFramebulk fb = GetRawFramebulkAt(slot, tasTick, currentToolsFramebulkIndex[slot]);
-
-	// update all tools that needs to be updated
-	auto fbTick = fb.tick;
-	fb.tick = tasTick;
-	if (fbTick == tasTick) {
-		for (TasToolCommand cmd : fb.toolCmds) {
-			auto tool = TasTool::GetInstanceByName(slot, cmd.tool->GetName());
-			if (tool == nullptr) continue;
-			tool->SetParams(cmd.params);
-		}
 	}
 
 	// applying tools
